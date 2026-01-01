@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,6 +65,10 @@ class DashboardActivity : ComponentActivity() {
                         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                         startActivity(intent)
                         finish()
+                    },
+                    onOpenSettings = {
+                        val intent = Intent(this, CalorieSettingsActivity::class.java)
+                        startActivity(intent)
                     }
                 )
             }
@@ -76,7 +81,8 @@ fun DashboardScreen(
     userId: Int,
     userRepository: UserRepository,
     foodRepository: FoodRepository,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     var user by remember { mutableStateOf<User?>(null) }
     var foodEntries by remember { mutableStateOf<List<FoodEntry>>(emptyList()) }
@@ -169,13 +175,23 @@ fun DashboardScreen(
                             )
                         }
                         
-                        // Logout button
-                        IconButton(onClick = onLogout) {
-                            Icon(
-                                imageVector = Icons.Default.ExitToApp,
-                                contentDescription = "Logout",
-                                tint = TextSecondary
-                            )
+                        // Settings and Logout buttons
+                        Row {
+                            IconButton(onClick = onOpenSettings) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = "Settings",
+                                    tint = TextSecondary
+                                )
+                            }
+                            
+                            IconButton(onClick = onLogout) {
+                                Icon(
+                                    imageVector = Icons.Default.ExitToApp,
+                                    contentDescription = "Logout",
+                                    tint = TextSecondary
+                                )
+                            }
                         }
                     }
                     

@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.painterResource
 import com.example.calorietracker.R
-import com.example.calorietracker.DashboardActivity
+import com.example.calorietracker.CalorieInputActivity
 import com.example.calorietracker.database.NutraDatabase
 import com.example.calorietracker.repository.UserRepository
 import com.example.calorietracker.ui.theme.*
@@ -46,7 +46,7 @@ class RegisterActivity : ComponentActivity() {
                 RegisterScreen(
                     onRegisterSuccess = { userId ->
                         sessionManager.saveUserSession(userId)
-                        val intent = Intent(this, DashboardActivity::class.java)
+                        val intent = Intent(this, CalorieInputActivity::class.java)
                         startActivity(intent)
                         finish()
                     },
@@ -70,7 +70,6 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    var calorieGoal by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -180,23 +179,7 @@ fun RegisterScreen(
                 shape = RoundedCornerShape(12.dp)
             )
             
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            // Calorie Goal field
-            OutlinedTextField(
-                value = calorieGoal,
-                onValueChange = {
-                    if (it.isEmpty() || it.all { char -> char.isDigit() }) {
-                        calorieGoal = it
-                        errorMessage = ""
-                    }
-                },
-                label = { Text("Daily Calorie Goal (kcal)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = RoundedCornerShape(12.dp)
-            )
+
             
             if (errorMessage.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
@@ -221,10 +204,6 @@ fun RegisterScreen(
                         password.isBlank() -> errorMessage = "Please enter password"
                         password.length < 6 -> errorMessage = "Password must be at least 6 characters"
                         password != confirmPassword -> errorMessage = "Passwords do not match"
-                        calorieGoal.isBlank() -> errorMessage = "Please enter calorie goal"
-                        calorieGoal.toIntOrNull() == null || calorieGoal.toInt() < 1000 -> {
-                            errorMessage = "Calorie goal must be at least 1000 kcal"
-                        }
                         else -> {
                             isLoading = true
                             scope.launch {
@@ -232,7 +211,7 @@ fun RegisterScreen(
                                     username = username.trim(),
                                     email = email.trim(),
                                     password = password,
-                                    calorieGoal = calorieGoal.toInt()
+                                    calorieGoal = 2000 // Default value, user will set it on next screen
                                 )
                                 isLoading = false
                                 result.onSuccess { userId ->

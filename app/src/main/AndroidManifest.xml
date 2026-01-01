@@ -41,6 +41,18 @@
             android:exported="false"
             android:theme="@style/Theme.CalorieTracker" />
         
+        <!-- Calorie Input Activity (Goal Setting) -->
+        <activity
+            android:name=".CalorieInputActivity"
+            android:exported="false"
+            android:theme="@style/Theme.CalorieTracker" />
+        
+        <!-- Calorie Settings Activity -->
+        <activity
+            android:name=".CalorieSettingsActivity"
+            android:exported="false"
+            android:theme="@style/Theme.CalorieTracker" />
+        
         <!-- Original MainActivity (kept for reference, not used) -->
         <activity
             android:name=".MainActivity"

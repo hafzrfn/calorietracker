@@ -22,12 +22,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.calorietracker.database.NutraDatabase
+import com.example.calorietracker.database.entities.User
 import com.example.calorietracker.repository.UserRepository
 import com.example.calorietracker.ui.theme.*
 import com.example.calorietracker.utils.SessionManager
 import kotlinx.coroutines.launch
 
-class CalorieInputActivity : ComponentActivity() {
+class CalorieSettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
@@ -38,33 +39,53 @@ class CalorieInputActivity : ComponentActivity() {
         
         setContent {
             CalorieTrackerTheme {
-                CalorieInputScreen(
-                    onSubmit = { calorieGoal ->
-                        kotlinx.coroutines.MainScope().launch {
-                            val user = userRepository.getUserById(userId)
-                            if (user != null) {
-                                userRepository.updateUser(user.copy(calorieGoal = calorieGoal))
+                var currentCalorieGoal by remember { mutableStateOf<Int?>(null) }
+                
+                LaunchedEffect(userId) {
+                    val user = userRepository.getUserById(userId)
+                    currentCalorieGoal = user?.calorieGoal ?: 2000
+                }
+                
+                if (currentCalorieGoal != null) {
+                    CalorieSettingsScreen(
+                        initialCalories = currentCalorieGoal!!,
+                        onSubmit = { calorieGoal ->
+                            kotlinx.coroutines.MainScope().launch {
+                                val user = userRepository.getUserById(userId)
+                                if (user != null) {
+                                    userRepository.updateUser(user.copy(calorieGoal = calorieGoal))
+                                }
+                                // Restart Dashboard to refresh data
+                                val intent = Intent(this@CalorieSettingsActivity, DashboardActivity::class.java)
+                                intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+                                startActivity(intent)
+                                finish()
                             }
-                            val intent = Intent(this@CalorieInputActivity, DashboardActivity::class.java)
-                            startActivity(intent)
+                        },
+                        onBack = {
                             finish()
                         }
-                    },
-                    onBack = {
-                        finish()
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(color = NutraGreen)
                     }
-                )
+                }
             }
         }
     }
 }
 
 @Composable
-fun CalorieInputScreen(
+fun CalorieSettingsScreen(
+    initialCalories: Int,
     onSubmit: (Int) -> Unit,
-    onBack: (() -> Unit)? = null
+    onBack: () -> Unit
 ) {
-    var calorieInput by remember { mutableStateOf("") }
+    var calorieInput by remember { mutableStateOf(initialCalories.toString()) }
     var errorMessage by remember { mutableStateOf("") }
     
     Surface(
@@ -76,40 +97,26 @@ fun CalorieInputScreen(
                 .fillMaxSize()
                 .padding(24.dp)
         ) {
-            // Top bar with back button and progress dots
+            // Top bar with back button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (onBack != null) {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Back",
-                            tint = TextPrimary
-                        )
-                    }
-                } else {
-                    Spacer(modifier = Modifier.size(48.dp))
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Back",
+                        tint = TextPrimary
+                    )
                 }
                 
-                // Progress dots
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    repeat(4) { index ->
-                        Box(
-                            modifier = Modifier
-                                .size(if (index == 2) 24.dp else 8.dp, 8.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(
-                                    if (index == 2) NutraGreen else LightBackground
-                                )
-                        )
-                    }
-                }
+                Text(
+                    text = "Settings",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
                 
                 Spacer(modifier = Modifier.size(48.dp))
             }
@@ -121,20 +128,10 @@ fun CalorieInputScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                // Title
-                Text(
-                    text = "Goal Setting",
-                    fontSize = 16.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
                 // Main heading
                 Row {
                     Text(
-                        text = "Enter your ",
+                        text = "Update your ",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -155,7 +152,7 @@ fun CalorieInputScreen(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = if (calorieInput.isEmpty()) "0" else formatCalories(calorieInput),
+                        text = if (calorieInput.isEmpty()) "0" else formatCaloriesSettings(calorieInput),
                         fontSize = 64.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -215,7 +212,7 @@ fun CalorieInputScreen(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Based on your activity level and current weight profile.",
+                                text = "Based on the average activity level of a human adult",
                                 fontSize = 12.sp,
                                 color = TextSecondary
                             )
@@ -263,7 +260,7 @@ fun CalorieInputScreen(
                     shape = RoundedCornerShape(28.dp)
                 ) {
                     Text(
-                        text = "Set Goal  →",
+                        text = "Update Goal  →",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -272,7 +269,7 @@ fun CalorieInputScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 // Number pad
-                NumberPad(
+                SettingsNumberPad(
                     onNumberClick = { number ->
                         if (calorieInput.length < 5) {
                             calorieInput += number
@@ -284,6 +281,10 @@ fun CalorieInputScreen(
                             calorieInput = calorieInput.dropLast(1)
                             errorMessage = ""
                         }
+                    },
+                    onClear = {
+                        calorieInput = ""
+                        errorMessage = ""
                     }
                 )
             }
@@ -291,15 +292,16 @@ fun CalorieInputScreen(
     }
 }
 
-private fun formatCalories(value: String): String {
+private fun formatCaloriesSettings(value: String): String {
     val number = value.toIntOrNull() ?: return value
     return String.format("%,d", number)
 }
 
 @Composable
-fun NumberPad(
+fun SettingsNumberPad(
     onNumberClick: (String) -> Unit,
-    onBackspace: () -> Unit
+    onBackspace: () -> Unit,
+    onClear: () -> Unit
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -309,35 +311,45 @@ fun NumberPad(
         Row(
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            NumberButton("1", onNumberClick)
-            NumberButton("2", onNumberClick)
-            NumberButton("3", onNumberClick)
+            SettingsNumberButton("1", onNumberClick)
+            SettingsNumberButton("2", onNumberClick)
+            SettingsNumberButton("3", onNumberClick)
         }
         
         // Row 2: 4, 5, 6
         Row(
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            NumberButton("4", onNumberClick)
-            NumberButton("5", onNumberClick)
-            NumberButton("6", onNumberClick)
+            SettingsNumberButton("4", onNumberClick)
+            SettingsNumberButton("5", onNumberClick)
+            SettingsNumberButton("6", onNumberClick)
         }
         
         // Row 3: 7, 8, 9
         Row(
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            NumberButton("7", onNumberClick)
-            NumberButton("8", onNumberClick)
-            NumberButton("9", onNumberClick)
+            SettingsNumberButton("7", onNumberClick)
+            SettingsNumberButton("8", onNumberClick)
+            SettingsNumberButton("9", onNumberClick)
         }
         
-        // Row 4: empty, 0, backspace
+        // Row 4: clear, 0, backspace
         Row(
             horizontalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            Spacer(modifier = Modifier.size(64.dp))
-            NumberButton("0", onNumberClick)
+            IconButton(
+                onClick = onClear,
+                modifier = Modifier.size(64.dp)
+            ) {
+                Text(
+                    text = "C",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextSecondary
+                )
+            }
+            SettingsNumberButton("0", onNumberClick)
             IconButton(
                 onClick = onBackspace,
                 modifier = Modifier.size(64.dp)
@@ -353,7 +365,7 @@ fun NumberPad(
 }
 
 @Composable
-fun NumberButton(number: String, onClick: (String) -> Unit) {
+fun SettingsNumberButton(number: String, onClick: (String) -> Unit) {
     Box(
         modifier = Modifier
             .size(64.dp)
