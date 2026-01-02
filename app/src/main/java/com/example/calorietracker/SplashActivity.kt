@@ -30,7 +30,7 @@ class SplashActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         
         setContent {
-            CalorieTrackerTheme {
+            CalorieTrackerTheme(darkTheme = false) {
                 SplashScreen {
                     navigateToNextScreen()
                 }

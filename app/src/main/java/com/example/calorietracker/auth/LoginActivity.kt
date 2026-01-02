@@ -40,7 +40,7 @@ class LoginActivity : ComponentActivity() {
         val sessionManager = SessionManager(this)
         
         setContent {
-            CalorieTrackerTheme {
+            CalorieTrackerTheme(darkTheme = false) {
                 LoginScreen(
                     onLoginSuccess = { userId ->
                         sessionManager.saveUserSession(userId)

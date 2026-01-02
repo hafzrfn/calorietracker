@@ -42,7 +42,7 @@ class RegisterActivity : ComponentActivity() {
         val sessionManager = SessionManager(this)
         
         setContent {
-            CalorieTrackerTheme {
+            CalorieTrackerTheme(darkTheme = false) {
                 RegisterScreen(
                     onRegisterSuccess = { userId ->
                         sessionManager.saveUserSession(userId)

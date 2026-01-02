@@ -37,7 +37,7 @@ class CalorieInputActivity : ComponentActivity() {
         val userRepository = UserRepository(database.userDao())
         
         setContent {
-            CalorieTrackerTheme {
+            CalorieTrackerTheme(darkTheme = false) {
                 CalorieInputScreen(
                     onSubmit = { calorieGoal ->
                         kotlinx.coroutines.MainScope().launch {
@@ -215,7 +215,7 @@ fun CalorieInputScreen(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Based on your activity level and current weight profile.",
+                                text = "Based on the average activity level of a human adult.",
                                 fontSize = 12.sp,
                                 color = TextSecondary
                             )

@@ -38,7 +38,7 @@ class CalorieSettingsActivity : ComponentActivity() {
         val userRepository = UserRepository(database.userDao())
         
         setContent {
-            CalorieTrackerTheme {
+            CalorieTrackerTheme(darkTheme = false) {
                 var currentCalorieGoal by remember { mutableStateOf<Int?>(null) }
                 
                 LaunchedEffect(userId) {
@@ -212,7 +212,7 @@ fun CalorieSettingsScreen(
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Based on the average activity level of a human adult",
+                                text = "Based on the average activity level of a human adult.",
                                 fontSize = 12.sp,
                                 color = TextSecondary
                             )
