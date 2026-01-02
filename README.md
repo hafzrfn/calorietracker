@@ -1,1 +1,1 @@
-A simple calorie tracker app that tracks daily food/calorie intake based on calorie count and macros
+Nutra - Calorie Tracker app that tracks daily calories intake based on calorie count and macros; carbs, proteins and fats
