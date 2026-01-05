@@ -21,7 +21,6 @@ import com.example.calorietracker.ui.theme.TextOnGreen
 import com.google.firebase.Firebase
 import com.google.firebase.ai.ai
 import com.google.firebase.ai.type.GenerativeBackend
-import com.google.firebase.ai.type.generationConfig
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
@@ -125,38 +124,58 @@ fun AddFoodDialog(
                                 aiErrorMessage = ""
 
                                 scope.launch {
-                                    try {
-                                        // Initialize Firebase AI with Gemini model
-                                        val ai = Firebase.ai(backend = GenerativeBackend.googleAI())
-                                        val generativeModel = ai.generativeModel(
-                                            modelName = "gemini-3-flash-preview"
-                                        )
+                                    // Model fallback chain (best to worst)
+                                    val modelFallbackChain = listOf(
+                                        "gemini-3-flash-preview",
+                                        "gemini-2.5-pro",
+                                        "gemini-2.5-flash",
+                                        "gemini-2.5-flash-lite",
+                                        "gemini-2.0-flash",
+                                        "gemini-2.0-flash-lite",
+                                    )
 
-                                        val prompt = """Estimate the accurate nutrition values for: "$mealDescription". Return ONLY THE SPECIFIED JSON FORMAT: {"name":"Name","calories":0,"carbs":0,"protein":0,"fats":0}"""
+                                    val prompt = """Estimate the most accurate nutritional information values possible for the following FOOD or MEAL description: "$mealDescription". STRICTLY RETURN JSON FORMAT ONLY: {"name":"","calories":0,"carbs":0,"protein":0,"fats":0}"""
 
-                                        val response = generativeModel.generateContent(prompt)
-                                        val responseText = response.text?.trim() ?: ""
+                                    var lastError: Exception? = null
+                                    var success = false
 
-                                        // Clean response - remove any markdown formatting if present
-                                        val cleanJson = responseText
-                                            .replace("```json", "")
-                                            .replace("```", "")
-                                            .trim()
+                                    for (modelName in modelFallbackChain) {
+                                        if (success) break
 
-                                        val jsonObject = JSONObject(cleanJson)
+                                        try {
+                                            val ai = Firebase.ai(backend = GenerativeBackend.googleAI())
+                                            val generativeModel = ai.generativeModel(modelName = modelName)
 
-                                        // Update the form fields with AI response
-                                        foodName = jsonObject.optString("name", mealDescription.take(30))
-                                        calories = jsonObject.optInt("calories", 0).toString()
-                                        carbs = jsonObject.optInt("carbs", 0).toString()
-                                        protein = jsonObject.optInt("protein", 0).toString()
-                                        fats = jsonObject.optInt("fats", 0).toString()
+                                            val response = generativeModel.generateContent(prompt)
+                                            val responseText = response.text?.trim() ?: ""
 
-                                        isAiLoading = false
-                                    } catch (e: Exception) {
-                                        aiErrorMessage = "AI Error: ${e.message ?: "Unknown error"}"
-                                        isAiLoading = false
+                                            // Clean response - remove any markdown formatting
+                                            val cleanJson = responseText
+                                                .replace("```json", "")
+                                                .replace("```", "")
+                                                .trim()
+
+                                            val jsonObject = JSONObject(cleanJson)
+
+                                            // Update form fields with AI response
+                                            foodName = jsonObject.optString("name", mealDescription.take(30))
+                                            calories = jsonObject.optInt("calories", 0).toString()
+                                            carbs = jsonObject.optInt("carbs", 0).toString()
+                                            protein = jsonObject.optInt("protein", 0).toString()
+                                            fats = jsonObject.optInt("fats", 0).toString()
+
+                                            success = true
+                                        } catch (e: Exception) {
+                                            lastError = e
+                                            // Continue to next model in fallback chain
+                                        }
                                     }
+
+                                    if (!success) {
+                                        aiErrorMessage = "AI Error: ${lastError?.message ?: "All models failed"}"
+                                    }
+
+                                    isAiLoading = false
                                 }
                             },
                             enabled = !isAiLoading && mealDescription.isNotBlank(),
