@@ -91,7 +91,7 @@ fun AddFoodDialog(
                         }
 
                         Text(
-                            text = "Describe your meal and let AI fill in the nutritional details",
+                            text = "Describe your meal and let the AI fill in all of the nutritional details for you.",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
